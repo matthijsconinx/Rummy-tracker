@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "players": ["Matthijs", "Louise"],
+  "currentChapter": "c-brussels",
+  "chapters": [
+    {
+      "id": "c-brussels", "name": "Brussels", "created": "2026-10-07T00:00:00.000Z", "offset": [0,0],
+      "games": [
+      ]
+    }
+  ]
+}

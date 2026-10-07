@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rummy">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5f3ee">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Rummy</title>
+<script>
+(function(){var t;try{t=JSON.parse(localStorage.getItem('rummy_theme'))}catch(e){}
+if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);})();
+</script>
+<style>
+:root{
+  --bg:#f5f3ee;--card:#ffffff;--ink:#1c1b1a;--muted:#77736b;--line:#e4e0d6;
+  --pa:#2f6fed;--pb:#e8590c;--key:#ebe7dc;--keyp:#dcd7c9;
+  --ok:#2f9e44;--warn:#f08c00;--bad:#e03131;--tie:#b9b4a6;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.05);
+}
+[data-theme=dark]{
+  --bg:#111214;--card:#1b1c1f;--ink:#f1efe9;--muted:#9a968c;--line:#2b2c30;
+  --pa:#6ea0ff;--pb:#ff944d;--key:#2a2b2f;--keyp:#3a3b40;
+  --ok:#51cf66;--warn:#fcc419;--bad:#ff6b6b;--tie:#5d5b55;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  overscroll-behavior:none;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation}
+input,select{font:inherit;font-size:16px;color:var(--ink);-webkit-user-select:text;user-select:text}
+svg{display:block}
+.ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ca{color:var(--pa)}.cb{color:var(--pb)}
+.bga{background:var(--pa)}.bgb{background:var(--pb)}
+.num{font-variant-numeric:tabular-nums}
+
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;flex:none}
+.chpill{display:flex;align-items:center;gap:6px;max-width:44%;padding:8px 12px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:650}
+.chpill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chpill svg{width:14px;height:14px;flex:none;opacity:.6}
+.spacer{flex:1}
+.status{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);background:var(--card);box-shadow:var(--shadow)}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.status.syncing i{background:var(--warn);animation:pulse 1s infinite}
+.status.offline i,.status.pending i{background:var(--warn)}
+.status.auth i,.status.err i{background:var(--bad)}
+@keyframes pulse{50%{opacity:.3}}
+.iconbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:var(--shadow)}
+main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:4px 14px 24px}
+#ptr{height:0;overflow:hidden;text-align:center;color:var(--muted);font-size:13px;opacity:0}
+nav{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;font-size:11px;font-weight:600;color:var(--muted)}
+nav button.on{color:var(--ink)}
+nav button.on svg{stroke:var(--ink)}
+
+.banner{margin:6px 0 10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 18%,var(--card));font-size:14px}
+.banner b{font-weight:650}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px}
+.sec{margin-top:14px}
+.sech{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 8px;font-weight:700}
+.sech small{font-weight:500;color:var(--muted);font-size:13px}
+.empty{padding:22px 10px;text-align:center;color:var(--muted);font-size:14px}
+
+.headline{font-size:22px;font-weight:750;letter-spacing:-.3px;margin:6px 4px 2px}
+.subline{color:var(--muted);font-size:13px;margin:0 4px 10px}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tot{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:12px 14px;border:2px solid transparent}
+.tot.lead.a{border-color:var(--pa)}.tot.lead.b{border-color:var(--pb)}
+.tot .nm{display:flex;align-items:center;gap:6px;font-weight:650;font-size:14px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.tot .big{font-size:38px;font-weight:780;letter-spacing:-1px;line-height:1.1;margin-top:2px}
+.tot .meta{font-size:13px;color:var(--muted);margin-top:2px;min-height:18px}
+.streak{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:650;background:color-mix(in srgb,var(--warn) 22%,transparent)}
+
+.entry .boxes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sbox{background:var(--key);border-radius:14px;padding:8px 12px;text-align:left;border:2px solid transparent}
+.sbox .sn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:650;color:var(--muted)}
+.sbox .sv{display:block;font-size:34px;font-weight:760;line-height:1.15;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.sbox .sv.ph{opacity:.25}
+.sbox.on.a{border-color:var(--pa)}.sbox.on.b{border-color:var(--pb)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keypad button{height:50px;border-radius:12px;background:var(--key);font-size:22px;font-weight:600}
+.keypad button:active{background:var(--keyp)}
+.keypad button.fn{font-size:20px;color:var(--muted)}
+.primary{display:block;width:100%;margin-top:10px;height:54px;border-radius:14px;background:var(--ink);color:var(--bg);font-size:18px;font-weight:700}
+.primary:disabled{opacity:.25}
+.primary:active:not(:disabled){opacity:.8}
+.danger{display:block;width:100%;margin-top:10px;height:46px;border-radius:12px;color:var(--bad);font-weight:650;background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.secondary{display:block;width:100%;margin-top:8px;height:46px;border-radius:12px;font-weight:650;background:var(--key)}
+
+.rows{background:var(--card);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;text-align:left;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .n{width:30px;color:var(--muted);font-size:13px}
+.row .sc{flex:1;font-size:19px;font-weight:650;font-variant-numeric:tabular-nums}
+.row .sc b{font-weight:800}
+.row .sc s{text-decoration:none;color:var(--muted);margin:0 6px;font-weight:500}
+.row .tm{color:var(--muted);font-size:13px}
+.chev{width:16px;height:16px;flex:none;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+.dayh{margin:14px 6px 6px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin:0 -14px;padding-left:14px;padding-right:14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 14px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-size:14px;font-weight:600;color:var(--muted)}
+.chip.on{background:var(--ink);color:var(--bg)}
+
+.statgrid{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;text-align:center}
+.statgrid .lab{color:var(--muted);font-size:13px}
+.statgrid .v{font-size:22px;font-weight:750;font-variant-numeric:tabular-nums}
+.form{display:flex;flex-wrap:wrap;gap:4px}
+.form i{width:17px;height:17px;border-radius:5px;background:var(--tie)}
+.form i.a{background:var(--pa)}.form i.b{background:var(--pb)}
+.form i.last{outline:2px solid var(--ink);outline-offset:1px}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:3px}
+#leadread{font-size:14px;font-weight:600;margin-bottom:6px;min-height:20px}
+#leadsvg{width:100%;height:auto;touch-action:pan-y}
+#leadsvg text{fill:var(--muted);font-size:10px}
+
+.sheetwrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end}
+.sheetwrap[hidden]{display:none}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.sheet{position:relative;width:100%;max-height:92vh;max-height:92dvh;overflow-y:auto;background:var(--bg);border-radius:22px 22px 0 0;padding:16px 14px calc(env(safe-area-inset-bottom) + 16px);animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sheet h2{margin:0 4px 12px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+.sheet h2 button{font-size:15px;font-weight:600;color:var(--muted)}
+.field{display:block;margin:0 0 12px}
+.field>span{display:block;font-size:13px;font-weight:650;color:var(--muted);margin:0 4px 5px}
+.field input,.field select{width:100%;height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:13px;color:var(--muted);margin:4px 4px 12px}
+details{margin:0 4px 12px;font-size:14px;color:var(--muted)}
+details summary{font-weight:650;cursor:pointer}
+details ol{margin:6px 0 0;padding-left:20px}
+.msg{margin:6px 4px 10px;font-size:14px;font-weight:600}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.chrow{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;text-align:left;border-top:1px solid var(--line)}
+.chrow:first-child{border-top:0}
+.chrow .t{flex:1;min-width:0}
+.chrow .t b{display:flex;align-items:center;gap:8px}
+.chrow .t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--ink);color:var(--bg)}
+#toast{position:fixed;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 70px);z-index:60;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:up .2s ease-out}
+#toast[hidden]{display:none}
+#toast span{flex:1}
+#toast button{font-weight:800;color:var(--warn);padding:4px 6px}
+.loading{padding:60px 20px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hdr"></header>
+  <main id="main"><div id="ptr"></div><div id="view"></div></main>
+  <nav id="nav"></nav>
+</div>
+<div class="sheetwrap" id="sheetwrap" hidden><div class="backdrop" data-act="closeSheet"></div><div class="sheet" id="sheet"></div></div>
+<div id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────────── constants & helpers ───────────── */
+const VERSION = '1.0';
+const PLAYERS = ['Matthijs', 'Louise'];
+const SIDE = ['a', 'b'];
+const GAP_MS = 4 * 3600 * 1000;      // gap that starts a new session
+const $ = s => document.querySelector(s);
+
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = n => (n < 0 ? '−' : '') + Math.abs(n);
+const fmtS = n => (n < 0 ? '−' : n > 0 ? '+' : '') + Math.abs(n);
+const fDay = t => new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+const fTime = t => new Date(t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const toLocalInput = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+const validVal = v => /^-?\d+$/.test(v);
+const nameSpan = i => `<span class="c${SIDE[i]}">${PLAYERS[i]}</span>`;
+
+const ICON = {
+  play: '<svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>',
+  list: '<svg class="ico" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  stats: '<svg class="ico" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  sun: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon: '<svg class="ico" viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>',
+  gear: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  caret: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+};
+
+/* ───────────── configuration ───────────── */
+function detectRepo() {
+  const h = location.hostname;
+  if (h.endsWith('.github.io')) {
+    const owner = h.split('.')[0];
+    const seg = location.pathname.split('/')[1] || '';
+    return { owner, repo: (!seg || seg.endsWith('.html')) ? owner + '.github.io' : seg };
+  }
+  return { owner: '', repo: '' };
+}
+const cfg = Object.assign({ owner: '', repo: '', branch: 'main', path: 'scores.json' }, detectRepo(), LS.get('rummy_cfg', {}));
+cfg.token = LS.get('rummy_token', '');
+const isGithub = () => !!(cfg.owner && cfg.repo);
+
+/* ───────────── data model ───────────── */
+function newChapter(name) { return { id: uid('c'), name, created: new Date().toISOString(), offset: [0, 0], games: [] }; }
+function emptyData() { const c = newChapter('Brussels'); return { version: 1, players: PLAYERS.slice(), currentChapter: c.id, chapters: [c] }; }
+
+function normalise(d) {
+  if (!d || typeof d !== 'object' || !Array.isArray(d.chapters)) throw new Error('scores.json has an unexpected shape');
+  d.chapters.forEach((c, ci) => {
+    c.id = c.id || 'c' + ci;
+    c.name = c.name || 'Chapter ' + (ci + 1);
+    c.created = c.created || new Date().toISOString();
+    c.offset = (Array.isArray(c.offset) && c.offset.length === 2) ? c.offset.map(Number) : [0, 0];
+    c.games = (Array.isArray(c.games) ? c.games : [])
+      .filter(g => g && Array.isArray(g.s) && g.s.length === 2 && Number.isFinite(+g.s[0]) && Number.isFinite(+g.s[1]))
+      .map((g, i) => ({ id: g.id || `g_${c.id}_${i}`, t: isNaN(new Date(g.t)) ? c.created : g.t, s: [+g.s[0], +g.s[1]] }));
+    sortGames(c.games);
+  });
+  if (!d.chapters.length) d.chapters.push(newChapter('Brussels'));
+  if (!d.chapters.find(c => c.id === d.currentChapter)) d.currentChapter = d.chapters[d.chapters.length - 1].id;
+  d.version = 1; d.players = PLAYERS.slice();
+  return d;
+}
+const sortGames = g => g.sort((a, b) => new Date(a.t) - new Date(b.t));
+const findChapter = (d, id) => d.chapters.find(c => c.id === id);
+
+function findGame(d, id) {
+  for (const c of d.chapters) { const i = c.games.findIndex(g => g.id === id); if (i >= 0) return { c, i, g: c.games[i] }; }
+  return null;
+}
+
+/* every change is an "op" so offline edits can be replayed on top of a fresh copy of the file */
+function applyOp(d, op) {
+  switch (op.op) {
+    case 'addGame': {
+      if (findGame(d, op.game.id)) return;
+      const c = findChapter(d, op.chapter) || findChapter(d, d.currentChapter);
+      c.games.push(clone(op.game)); sortGames(c.games); break;
+    }
+    case 'editGame': {
+      const f = findGame(d, op.id); if (!f) return;
+      f.c.games.splice(f.i, 1);
+      const g = { id: op.id, t: op.t, s: op.s.slice() };
+      const c = findChapter(d, op.chapter) || f.c;
+      c.games.push(g); sortGames(c.games); break;
+    }
+    case 'deleteGame': { const f = findGame(d, op.id); if (f) f.c.games.splice(f.i, 1); break; }
+    case 'addChapter':
+      if (!findChapter(d, op.chapter.id)) d.chapters.push(clone(op.chapter));
+      if (op.activate) d.currentChapter = op.chapter.id;
+      break;
+    case 'editChapter': { const c = findChapter(d, op.id); if (c) { c.name = op.name; c.offset = op.offset.slice(); } break; }
+    case 'setActive': if (findChapter(d, op.id)) d.currentChapter = op.id; break;
+    case 'deleteChapter': {
+      const c = findChapter(d, op.id);
+      if (c && !c.games.length && d.chapters.length > 1) {
+        d.chapters = d.chapters.filter(x => x !== c);
+        if (d.currentChapter === op.id) d.currentChapter = d.chapters[d.chapters.length - 1].id;
+      }
+      break;
+    }
+  }
+}
+
+function serialize(d) {
+  const J = JSON.stringify;
+  const chs = d.chapters.map(c =>
+    `    {\n      "id": ${J(c.id)}, "name": ${J(c.name)}, "created": ${J(c.created)}, "offset": ${J(c.offset)},\n      "games": [\n` +
+    c.games.map(g => `        ${J({ id: g.id, t: g.t, s: g.s })}`).join(',\n') +
+    `\n      ]\n    }`).join(',\n');
+  return `{\n  "version": 1,\n  "players": ${J(PLAYERS)},\n  "currentChapter": ${J(d.currentChapter)},\n  "chapters": [\n${chs}\n  ]\n}\n`;
+}
+
+/* ───────────── stats ───────────── */
+const win = g => g.s[0] > g.s[1] ? 0 : g.s[1] > g.s[0] ? 1 : -1;
+function calc(games, offset = [0, 0]) {
+  const tot = offset.slice(), wins = [0, 0], best = [0, 0];
+  let ties = 0, run = 0, runP = -1;
+  games.forEach(g => {
+    tot[0] += g.s[0]; tot[1] += g.s[1];
+    const w = win(g);
+    if (w < 0) { ties++; run = 0; runP = -1; }
+    else { if (w === runP) run++; else { runP = w; run = 1; } wins[w]++; best[w] = Math.max(best[w], run); }
+  });
+  return { tot, wins, ties, n: games.length, best, cur: { p: runP, len: run } };
+}
+function allGames(d) {
+  const out = [];
+  d.chapters.forEach(c => c.games.forEach(g => out.push(Object.assign({ ch: c.id }, g))));
+  return sortGames(out);
+}
+function sessions(games) {
+  const out = []; let cur = [];
+  games.forEach((g, i) => {
+    if (i && new Date(g.t) - new Date(games[i - 1].t) > GAP_MS) { out.push(cur); cur = []; }
+    cur.push(g);
+  });
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+/* ───────────── state ───────────── */
+const S = {
+  base: null, sha: null,
+  pending: LS.get('rummy_pending', []),
+  st: { k: 'syncing', msg: '' },
+  lastLoad: 0,
+};
+{ const c = LS.get('rummy_cache', null); if (c && c.data) { try { S.base = normalise(c.data); S.sha = c.sha; } catch (e) {} } }
+const U = { tab: 'play', scope: null };
+const ents = {
+  main: { vals: ['', ''], active: 0, mode: 'add' },
+  edit: { vals: ['', ''], active: 0, mode: 'edit' },
+};
+const view = () => { const d = clone(S.base || emptyData()); S.pending.forEach(o => applyOp(d, o)); return d; };
+
+function getScope(d) {
+  let id = U.scope;
+  if (id !== 'all' && !findChapter(d, id)) id = d.currentChapter;
+  if (id === 'all') {
+    return { id, name: 'All time', games: allGames(d), offset: d.chapters.reduce((a, c) => [a[0] + c.offset[0], a[1] + c.offset[1]], [0, 0]), all: true };
+  }
+  const c = findChapter(d, id);
+  return { id, name: c.name, games: c.games, offset: c.offset, all: false };
+}
+
+/* ───────────── sync (GitHub API / demo) ───────────── */
+const apiUrl = () => `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.path.split('/').map(encodeURIComponent).join('/')}`;
+const b64enc = s => btoa(unescape(encodeURIComponent(s)));
+const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
+function ghFetch(method, url, body) {
+  const h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  if (cfg.token) h.Authorization = 'Bearer ' + cfg.token;
+  if (body) h['Content-Type'] = 'application/json';
+  return fetch(url, { method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+}
+class SyncError extends Error { constructor(kind, msg, status) { super(msg); this.kind = kind; this.status = status; } }
+async function failFrom(res) {
+  let m = ''; try { m = (await res.json()).message || ''; } catch (e) {}
+  if (res.status === 401) throw new SyncError('auth', 'Token rejected or expired – update it in Settings', 401);
+  if (res.status === 403) {
+    if (res.headers.get('x-ratelimit-remaining') === '0') throw new SyncError('err', 'GitHub rate limit reached – try again later', 403);
+    throw new SyncError('auth', 'Token has no write access to this repo', 403);
+  }
+  throw new SyncError('err', `GitHub error ${res.status}${m ? ': ' + m : ''}`, res.status);
+}
+
+async function remoteLoad() {
+  if (!isGithub()) {
+    let r = LS.get('rummy_demo_remote', null);
+    if (!r) { r = { data: seedDemo(), sha: 'demo0' }; LS.set('rummy_demo_remote', r); }
+    return { data: clone(r.data), sha: r.sha };
+  }
+  const res = await ghFetch('GET', `${apiUrl()}?ref=${encodeURIComponent(cfg.branch)}&_=${Date.now()}`);
+  if (res.status === 404) return { data: null, sha: null };          // file not created yet
+  if (!res.ok) await failFrom(res);
+  const j = await res.json();
+  if (!j.content) throw new SyncError('err', 'scores.json is too large to read via the API');
+  let parsed;
+  try { parsed = JSON.parse(b64dec(j.content)); } catch (e) { throw new SyncError('err', 'scores.json is not valid JSON – not overwriting it'); }
+  return { data: parsed, sha: j.sha };
+}
+async function remoteSave(d, sha, message) {
+  if (!isGithub()) {
+    const nsha = uid('demo');
+    LS.set('rummy_demo_remote', { data: clone(d), sha: nsha });
+    return nsha;
+  }
+  const body = { message, content: b64enc(serialize(d)), branch: cfg.branch };
+  if (sha) body.sha = sha;
+  const res = await ghFetch('PUT', apiUrl(), body);
+  if (res.status === 409 || res.status === 422) throw new SyncError('conflict', 'conflict', res.status);
+  if (!res.ok) await failFrom(res);
+  return (await res.json()).content.sha;
+}
+
+const describeOps = ops => {
+  if (ops.length !== 1) return `Update scores (${ops.length} changes)`;
+  const o = ops[0];
+  if (o.op === 'addGame') return `Add game: ${PLAYERS[0]} ${o.game.s[0]} – ${PLAYERS[1]} ${o.game.s[1]}`;
+  if (o.op === 'editGame') return 'Edit game';
+  if (o.op === 'deleteGame') return 'Delete game';
+  if (o.op === 'addChapter') return `New chapter: ${o.chapter.name}`;
+  return 'Update scores';
+};
+
+let syncing = false, syncAgain = false, syncTimer = null;
+function setStatus(k, msg) { S.st = { k, msg: msg || '' }; renderHeader(); }
+function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(true), 350); }
+async function sync(force) {
+  if (syncing) { syncAgain = true; return; }
+  if (!force && !S.pending.length && Date.now() - S.lastLoad < 10000) return;
+  syncing = true; setStatus('syncing');
+  try {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const r = await remoteLoad();
+      S.lastLoad = Date.now();
+      const fresh = r.data ? normalise(r.data) : emptyData();
+      const ops = S.pending.slice();
+      if (!ops.length) { setBase(fresh, r.sha); setStatus('ok'); break; }
+      if (isGithub() && !cfg.token) {
+        setBase(fresh, r.sha);
+        setStatus('auth', 'Saved on this phone. Add your GitHub token in Settings to sync.');
+        break;
+      }
+      const next = clone(fresh); ops.forEach(o => applyOp(next, o));
+      try {
+        const nsha = await remoteSave(next, r.sha, describeOps(ops));
+        setBase(next, nsha);
+        const done = new Set(ops.map(o => o.oid));
+        S.pending = S.pending.filter(o => !done.has(o.oid)); LS.set('rummy_pending', S.pending);
+        setStatus('ok'); break;
+      } catch (e) {
+        if (e.kind === 'conflict' && attempt < 3) continue;
+        throw e;
+      }
+    }
+  } catch (e) {
+    if (e instanceof SyncError) setStatus(e.kind, e.message);
+    else setStatus('offline', 'No connection – changes are saved on this phone and will sync later.');
+  } finally {
+    syncing = false;
+    render();
+    if (syncAgain) { syncAgain = false; sync(true); }
+  }
+}
+function setBase(d, sha) { S.base = d; S.sha = sha; LS.set('rummy_cache', { data: d, sha }); }
+function addOp(op) {
+  S.pending.push(Object.assign({ oid: uid('o') }, op));
+  LS.set('rummy_pending', S.pending);
+  render(); scheduleSync();
+}
+
+/* demo data (only used when not connected to a GitHub repo) */
+function seedDemo() {
+  let a = 42; const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const sc = () => { const r = rnd(); return r < .06 ? Math.round(-30 + rnd() * 40) : Math.round(50 + rnd() * 200); };
+  const mk = (name, startDaysAgo, spanDays, perDay, offset) => {
+    const c = newChapter(name); c.offset = offset; c.created = new Date(Date.now() - startDaysAgo * 864e5).toISOString();
+    for (let d = 0; d < spanDays; d++) {
+      const base = Date.now() - (startDaysAgo - d) * 864e5; const n = 5 + Math.floor(rnd() * perDay);
+      for (let i = 0; i < n; i++) c.games.push({ id: uid('g'), t: new Date(base - (n - i) * 8 * 60e3).toISOString(), s: [sc(), sc()] });
+    }
+    return c;
+  };
+  const holiday = mk('Holiday', 20, 7, 5, [0, 0]);
+  const brussels = mk('Brussels', 6, 6, 4, [0, 0]);
+  brussels.games = brussels.games.filter(g => new Date(g.t) < Date.now() - 3 * 36e5);
+  for (let i = 0; i < 4; i++) brussels.games.push({ id: uid('g'), t: new Date(Date.now() - (4 - i) * 11 * 60e3 - 3600e3).toISOString(), s: [sc(), sc()] });
+  return { version: 1, players: PLAYERS, currentChapter: brussels.id, chapters: [holiday, brussels] };
+}
+
+/* ───────────── rendering ───────────── */
+let lastKey = '';
+function renderHeader() {
+  const d = view(), cur = findChapter(d, d.currentChapter);
+  const p = S.pending.length, k = S.st.k;
+  let cls = k, label = 'Synced';
+  if (!isGithub()) label = 'Demo';
+  if (k === 'syncing') label = 'Syncing…';
+  else if (k === 'offline') label = `Offline${p ? ' · ' + p : ''}`;
+  else if (k === 'auth') label = p ? `Not synced · ${p}` : 'Add token';
+  else if (k === 'err') label = 'Sync error';
+  else if (p) { cls = 'pending'; label = `Saving · ${p}`; }
+  const theme = document.documentElement.getAttribute('data-theme');
+  $('#hdr').innerHTML =
+    `<button class="chpill" data-act="chapters"><span>${esc(cur.name)}</span>${ICON.caret}</button>
+     <div class="spacer"></div>
+     <button class="status ${cls}" data-act="syncnow"><i></i>${label}</button>
+     <button class="iconbtn" data-act="theme" aria-label="Toggle theme">${theme === 'dark' ? ICON.sun : ICON.moon}</button>
+     <button class="iconbtn" data-act="settings" aria-label="Settings">${ICON.gear}</button>`;
+}
+function renderNav() {
+  const t = [['play', 'Play', ICON.play], ['history', 'History', ICON.list], ['stats', 'Stats', ICON.stats]];
+  $('#nav').innerHTML = t.map(([id, l, ic]) => `<button class="${U.tab === id ? 'on' : ''}" data-act="tab" data-id="${id}">${ic}${l}</button>`).join('');
+}
+
+function render(force) {
+  renderHeader();
+  const box = $('#view');
+  if (!S.base) {
+    const msg = S.st.k === 'syncing' ? 'Loading…' : `${esc(S.st.msg || 'Could not load the scores.')}<br><br><button class="secondary" data-act="syncnow">Try again</button><button class="secondary" data-act="settings">Settings</button>`;
+    box.innerHTML = `<div class="loading">${msg}</div>`; return;
+  }
+  const d = view();
+  const key = JSON.stringify([d, U.tab, U.scope, S.st.k, isGithub(), !!cfg.token]);
+  if (!force && key === lastKey) return;
+  lastKey = key;
+  const top = $('#main').scrollTop;
+  box.innerHTML = U.tab === 'play' ? playHTML(d) : U.tab === 'history' ? historyHTML(d) : statsHTML(d);
+  $('#main').scrollTop = top;
+  renderNav();
+  if (U.tab === 'stats') wireChart();
+}
+
+function leadText(v) { return v === 0 ? 'All square' : `${nameSpan(v > 0 ? 0 : 1)} +${Math.abs(v)}`; }
+function headline(tot, n) {
+  if (!n) return 'Ready when you are';
+  const df = tot[0] - tot[1];
+  return df === 0 ? 'All square' : `${nameSpan(df > 0 ? 0 : 1)} leads by ${Math.abs(df)}`;
+}
+
+/* ── Play tab ── */
+function playHTML(d) {
+  const cur = findChapter(d, d.currentChapter), cs = calc(cur.games, cur.offset);
+  const all = allGames(d), as = calc(all, d.chapters.reduce((a, c) => [a[0] + c.offset[0], a[1] + c.offset[1]], [0, 0]));
+  let banner = '';
+  if (!isGithub()) banner = `<div class="banner"><b>Demo mode.</b> Fake data stored only on this device. Open your GitHub Pages link to use the real scores.</div>`;
+  else if (!cfg.token) banner = `<div class="banner"><b>Read-only.</b> Add your GitHub token in <button style="text-decoration:underline;font-weight:650" data-act="settings">Settings</button> to save games.</div>`;
+  else if (S.st.k === 'auth' || S.st.k === 'err') banner = `<div class="banner">${esc(S.st.msg)}</div>`;
+
+  const tot = i => `<div class="tot ${SIDE[i]} ${cs.n && cs.tot[i] > cs.tot[1 - i] ? 'lead' : ''}">
+      <div class="nm"><i class="dot bg${SIDE[i]}"></i>${PLAYERS[i]}</div>
+      <div class="big num">${fmtN(cs.tot[i])}</div>
+      <div class="meta">${cs.wins[i]} ${cs.wins[i] === 1 ? 'win' : 'wins'}</div>
+      ${cs.cur.p === i && cs.cur.len >= 2 ? `<span class="streak">🔥 ${cs.cur.len} in a row</span>` : ''}
+    </div>`;
+
+  const ses = sessions(all), last = ses[ses.length - 1];
+  let sessHTML = '';
+  if (last) {
+    const isCur = Date.now() - new Date(last[last.length - 1].t) < GAP_MS;
+    const ss = calc(last), many = d.chapters.length;
+    sessHTML = `<div class="sec"><div class="sech">${isCur ? 'Current session' : 'Last session'}<small>${isCur ? '' : fDay(last[0].t) + ' · '}${ss.wins[0]}–${ss.wins[1]} in games</small></div>
+      <div class="rows">${last.slice().reverse().map((g, i) => gameRow(g, last.length - i)).join('')}</div>
+      <div class="subline" style="margin-top:8px;text-align:center">Session points: ${nameSpan(0)} ${fmtN(ss.tot[0])} · ${nameSpan(1)} ${fmtN(ss.tot[1])}</div></div>`;
+  }
+  return `${banner}
+    <div class="headline">${headline(cs.tot, cs.n)}</div>
+    <div class="subline">${esc(cur.name)} · ${cs.n} ${cs.n === 1 ? 'game' : 'games'}${d.chapters.length > 1 ? ' · All time: ' + (as.tot[0] === as.tot[1] ? 'all square' : `${PLAYERS[as.tot[0] > as.tot[1] ? 0 : 1]} +${Math.abs(as.tot[0] - as.tot[1])}`) : ''}</div>
+    <div class="totals">${tot(0)}${tot(1)}</div>
+    <div class="sec card entry" id="ent-main">${entryInner('main')}</div>
+    ${sessHTML}`;
+}
+function gameRow(g, n, extra) {
+  const w = win(g);
+  const s0 = `<span class="${w === 0 ? 'ca' : ''}">${w === 0 ? '<b>' + fmtN(g.s[0]) + '</b>' : fmtN(g.s[0])}</span>`;
+  const s1 = `<span class="${w === 1 ? 'cb' : ''}">${w === 1 ? '<b>' + fmtN(g.s[1]) + '</b>' : fmtN(g.s[1])}</span>`;
+  return `<button class="row" data-act="edit" data-id="${g.id}"><span class="n">#${n}</span><span class="sc">${s0}<s>–</s>${s1}</span><span class="tm">${extra || ''}${fTime(g.t)}</span>${ICON.chev}</button>`;
+}
+
+/* ── score entry (shared by Play tab and edit sheet) ── */
+function entryInner(id) {
+  const E = ents[id], ok = [validVal(E.vals[0]), validVal(E.vals[1])];
+  let label = 'Add game', disabled = false;
+  if (E.mode === 'edit') { label = 'Save changes'; disabled = !(ok[0] && ok[1]); }
+  else if (ok[0] && ok[1]) label = 'Add game';
+  else if (ok[E.active]) label = 'Next: ' + PLAYERS[1 - E.active];
+  else disabled = true;
+  const box = i => { const v = E.vals[i]; return `<button class="sbox ${SIDE[i]} ${E.active === i ? 'on' : ''}" data-act="sel" data-ent="${id}" data-i="${i}">
+      <span class="sn"><i class="dot bg${SIDE[i]}"></i>${PLAYERS[i]}</span><span class="sv ${v === '' ? 'ph' : ''}">${v === '' ? '0' : v.replace('-', '−')}</span></button>`; };
+  const k = (key, lab, fn) => `<button class="${fn ? 'fn' : ''}" data-act="key" data-ent="${id}" data-k="${key}">${lab}</button>`;
+  return `<div class="boxes">${box(0)}${box(1)}</div>
+    <div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => k(n, n)).join('')}${k('pm', '±', 1)}${k(0, 0)}${k('del', '⌫', 1)}</div>
+    <button class="primary" data-act="go" data-ent="${id}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+}
+function refreshEntry(id) { const el = $('#ent-' + id); if (el) el.innerHTML = entryInner(id); }
+function pressKey(E, k) {
+  const v = E.vals[E.active];
+  if (k === 'del') { if (v === '' && E.active === 1 && E.mode === 'add') E.active = 0; else E.vals[E.active] = v.slice(0, -1); }
+  else if (k === 'pm') E.vals[E.active] = v.startsWith('-') ? v.slice(1) : '-' + v;
+  else {
+    let x = v; const digits = x.replace('-', '');
+    if (digits.length >= 5) return;
+    if (digits === '0') x = x.replace('0', '');
+    E.vals[E.active] = x + k;
+  }
+}
+function submitAdd() {
+  const E = ents.main, s = [+E.vals[0], +E.vals[1]];
+  if (s.some(x => Math.abs(x) > 500) && !confirm(`Scores ${s[0]} and ${s[1]} look unusual. Save anyway?`)) return;
+  const d = view(), game = { id: uid('g'), t: new Date().toISOString(), s };
+  E.vals = ['', '']; E.active = 0;
+  addOp({ op: 'addGame', chapter: d.currentChapter, game });
+  toast(`Added ${fmtN(s[0])} – ${fmtN(s[1])}`, 'Undo', () => { addOp({ op: 'deleteGame', id: game.id }); });
+}
+
+/* ── History tab ── */
+function chipsHTML(d) {
+  const chips = [{ id: 'all', name: 'All time' }].concat(d.chapters.slice().reverse());
+  const sc = getScope(d).id;
+  return `<div class="chips">${chips.map(c => `<button class="chip ${c.id === sc ? 'on' : ''}" data-act="scope" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>`;
+}
+function historyHTML(d) {
+  const sc = getScope(d), st = calc(sc.games, sc.offset);
+  const chName = id => esc(findChapter(d, id).name);
+  let body = '';
+  if (!sc.games.length) body = '<div class="card empty">No games yet.</div>';
+  else {
+    let lastDay = '';
+    const list = sc.games.map((g, i) => ({ g, n: i + 1 })).reverse();
+    list.forEach(({ g, n }) => {
+      const day = fDay(g.t);
+      if (day !== lastDay) { body += (lastDay ? '</div>' : '') + `<div class="dayh">${day}</div><div class="rows">`; lastDay = day; }
+      body += gameRow(g, n, sc.all ? chName(g.ch) + ' · ' : '');
+    });
+    body += '</div>';
+  }
+  return `${chipsHTML(d)}
+    <div class="headline">${headline(st.tot, st.n)}</div>
+    <div class="subline">${esc(sc.name)} · ${st.n} games · ${nameSpan(0)} ${fmtN(st.tot[0])} vs ${nameSpan(1)} ${fmtN(st.tot[1])}</div>${body}`;
+}
+
+/* ── Stats tab ── */
+let CH = null;
+function statsHTML(d) {
+  const sc = getScope(d), st = calc(sc.games, sc.offset);
+  if (!st.n) return `${chipsHTML(d)}<div class="card empty">Play a game to see stats.</div>`;
+  const avg = i => Math.round(sc.games.reduce((a, g) => a + g.s[i], 0) / st.n);
+  const row = (lab, a, b) => `<div class="v ca">${a}</div><div class="lab">${lab}</div><div class="v cb">${b}</div>`;
+  const form = sc.games.map((g, i) => { const w = win(g); return `<i class="${w < 0 ? '' : SIDE[w]} ${i === sc.games.length - 1 ? 'last' : ''}"></i>`; }).join('');
+  return `${chipsHTML(d)}
+    <div class="card"><div class="statgrid">
+      <div class="nm" style="font-weight:700">${PLAYERS[0]}</div><div></div><div class="nm" style="font-weight:700">${PLAYERS[1]}</div>
+      ${row('wins', st.wins[0], st.wins[1])}
+      ${row('current streak', st.cur.p === 0 ? st.cur.len : 0, st.cur.p === 1 ? st.cur.len : 0)}
+      ${row('best streak', st.best[0], st.best[1])}
+      ${row('avg per game', avg(0), avg(1))}
+    </div>${st.ties ? `<div class="subline" style="text-align:center;margin:10px 0 0">${st.ties} tied ${st.ties === 1 ? 'game' : 'games'}</div>` : ''}</div>
+    <div class="sec"><div class="sech">Form<small>${st.n} games · oldest → newest</small></div>
+      <div class="card"><div class="form">${form}</div>
+      <div class="legend"><span><i class="bga"></i>${PLAYERS[0]} won</span><span><i class="bgb"></i>${PLAYERS[1]} won</span><span><i style="background:var(--tie)"></i>Tie</span></div></div></div>
+    <div class="sec"><div class="sech">Lead over time<small>${sc.all ? 'all chapters' : esc(sc.name)}</small></div>
+      <div class="card">${leadChart(sc, d)}</div></div>`;
+}
+function leadChart(sc, d) {
+  const g = sc.games;
+  if (g.length < 2) { CH = null; return '<div class="empty">Play at least two games to see the lead over time.</div>'; }
+  const pts = [sc.offset[0] - sc.offset[1]];
+  g.forEach(x => pts.push(pts[pts.length - 1] + x.s[0] - x.s[1]));
+  const W = 340, H = 190, L = 38, R = 10, T = 14, B = 22, n = pts.length - 1;
+  const rawMax = Math.max(0, ...pts), rawMin = Math.min(0, ...pts);
+  let mx = rawMax, mn = rawMin; if (mx === mn) { mx = 10; mn = -10; }
+  const pad = (mx - mn) * 0.08; mx += pad; mn -= pad;
+  const X = i => L + (W - L - R) * i / n, Y = v => T + (H - T - B) * (mx - v) / (mx - mn);
+  const y0 = Y(0), frac = ((y0 - T) / (H - T - B) * 100).toFixed(2);
+  const line = 'M' + pts.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join('L');
+  const area = `${line}L${X(n).toFixed(1)},${y0.toFixed(1)}L${X(0).toFixed(1)},${y0.toFixed(1)}Z`;
+  const ticks = [[rawMax, rawMax > 0], [rawMin, rawMin < 0]].filter(t => t[1] && Math.abs(Y(t[0]) - y0) > 12)
+    .map(t => `<text x="${L - 5}" y="${(Y(t[0]) + 3).toFixed(1)}" text-anchor="end">${fmtS(t[0])}</text><line x1="${L}" x2="${W - R}" y1="${Y(t[0]).toFixed(1)}" y2="${Y(t[0]).toFixed(1)}" stroke="var(--line)" stroke-dasharray="2 4"/>`).join('');
+  let dividers = '';
+  if (sc.all) {
+    let idx = 0;
+    d.chapters.forEach((c, ci) => {
+      if (ci && c.games.length) dividers += `<line x1="${X(idx).toFixed(1)}" x2="${X(idx).toFixed(1)}" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" opacity=".5"/><text x="${(X(idx) + 3).toFixed(1)}" y="${T + 8}">${esc(c.name.slice(0, 12))}</text>`;
+      idx += c.games.length;
+    });
+  }
+  CH = { pts, g, W, L, R, n, X, Y };
+  return `<div id="leadread">${leadText(pts[n])}</div>
+    <svg id="leadsvg" viewBox="0 0 ${W} ${H}">
+      <defs>
+        <linearGradient id="gl" gradientUnits="userSpaceOnUse" x1="0" y1="${T}" x2="0" y2="${H - B}"><stop offset="${frac}%" stop-color="var(--pa)"/><stop offset="${frac}%" stop-color="var(--pb)"/></linearGradient>
+        <linearGradient id="gf" gradientUnits="userSpaceOnUse" x1="0" y1="${T}" x2="0" y2="${H - B}"><stop offset="${frac}%" stop-color="var(--pa)" stop-opacity=".2"/><stop offset="${frac}%" stop-color="var(--pb)" stop-opacity=".2"/></linearGradient>
+      </defs>
+      ${ticks}${dividers}
+      <path d="${area}" fill="url(#gf)"/>
+      <line x1="${L}" x2="${W - R}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" stroke="var(--muted)" opacity=".6"/>
+      <text x="${L - 5}" y="${(y0 + 3).toFixed(1)}" text-anchor="end">0</text>
+      <path d="${line}" fill="none" stroke="url(#gl)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <text x="${L}" y="${H - 6}">game 1</text><text x="${W - R}" y="${H - 6}" text-anchor="end">game ${n}</text>
+      <text x="${W - R}" y="${T + 8}" text-anchor="end" style="fill:var(--pa)">▲ ${PLAYERS[0]} ahead</text>
+      <text x="${W - R}" y="${H - B - 4}" text-anchor="end" style="fill:var(--pb)">▼ ${PLAYERS[1]} ahead</text>
+      <line id="leadcur" y1="${T}" y2="${H - B}" stroke="var(--ink)" stroke-width="1" opacity="0"/>
+      <circle id="leaddot" r="4.5" fill="var(--ink)" opacity="0"/>
+    </svg>`;
+}
+function wireChart() {
+  const svg = $('#leadsvg'); if (!svg || !CH) return;
+  const read = $('#leadread'), cur = $('#leadcur'), dot = $('#leaddot'), c = CH;
+  const move = e => {
+    const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * c.W;
+    const i = Math.max(0, Math.min(c.n, Math.round((x - c.L) / (c.W - c.L - c.R) * c.n)));
+    cur.setAttribute('x1', c.X(i)); cur.setAttribute('x2', c.X(i)); cur.setAttribute('opacity', '.4');
+    dot.setAttribute('cx', c.X(i)); dot.setAttribute('cy', c.Y(c.pts[i])); dot.setAttribute('opacity', '1');
+    read.innerHTML = i === 0 ? 'Start' : `Game ${i} · ${fDay(c.g[i - 1].t)} · ${leadText(c.pts[i])}`;
+  };
+  const end = () => { cur.setAttribute('opacity', '0'); dot.setAttribute('opacity', '0'); read.innerHTML = leadText(c.pts[c.n]); };
+  svg.addEventListener('pointerdown', move); svg.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') move(e); });
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end); svg.addEventListener('pointerleave', end);
+}
+
+/* ───────────── sheets & toast ───────────── */
+function openSheet(html) { $('#sheet').innerHTML = html; $('#sheetwrap').hidden = false; $('#sheet').scrollTop = 0; }
+function closeSheet() { $('#sheetwrap').hidden = true; $('#sheet').innerHTML = ''; }
+let toastTimer = null, toastFn = null;
+function toast(text, actLabel, fn) {
+  const t = $('#toast'); toastFn = fn || null;
+  t.innerHTML = `<span>${esc(text)}</span>${actLabel ? `<button data-act="toastact">${actLabel}</button>` : ''}`;
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 8000);
+}
+
+/* edit game */
+function openEdit(id) {
+  const d = view(), f = findGame(d, id); if (!f) return;
+  const E = ents.edit; E.vals = [String(f.g.s[0]), String(f.g.s[1])]; E.active = 0; E.id = id;
+  openSheet(`<h2>Edit game<button data-act="closeSheet">Close</button></h2>
+    <div class="card entry" id="ent-edit">${entryInner('edit')}</div>
+    <div class="sec two">
+      <label class="field"><span>Played at</span><input type="datetime-local" id="ed-t" value="${toLocalInput(f.g.t)}"></label>
+      <label class="field"><span>Chapter</span><select id="ed-c">${d.chapters.map(c => `<option value="${c.id}" ${c.id === f.c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+    </div>
+    <button class="danger" data-act="delGame">Delete game</button>`);
+}
+function saveEdit() {
+  const E = ents.edit, tv = $('#ed-t').value, t = tv ? new Date(tv).toISOString() : new Date().toISOString();
+  addOp({ op: 'editGame', id: E.id, t, s: [+E.vals[0], +E.vals[1]], chapter: $('#ed-c').value });
+  closeSheet(); toast('Game updated');
+}
+
+/* chapters */
+function openChapters() {
+  const d = view();
+  const rows = d.chapters.slice().reverse().map(c => {
+    const s = calc(c.games, c.offset), df = s.tot[0] - s.tot[1];
+    return `<button class="chrow" data-act="chOpen" data-id="${c.id}"><div class="t"><b>${esc(c.name)}${c.id === d.currentChapter ? '<span class="badge">ACTIVE</span>' : ''}</b>
+      <small>${s.n} games · ${nameSpan(0)} ${fmtN(s.tot[0])} · ${nameSpan(1)} ${fmtN(s.tot[1])}${df ? ` · ${PLAYERS[df > 0 ? 0 : 1]} +${Math.abs(df)}` : ''}</small></div>${ICON.chev}</button>`;
+  }).join('');
+  const all = calc(allGames(d), d.chapters.reduce((a, c) => [a[0] + c.offset[0], a[1] + c.offset[1]], [0, 0]));
+  openSheet(`<h2>Chapters<button data-act="closeSheet">Close</button></h2>
+    <div class="card" style="margin-bottom:12px"><div style="font-weight:700">All time</div>
+      <div class="subline" style="margin:2px 0 0">${all.n} games · ${nameSpan(0)} ${fmtN(all.tot[0])} · ${nameSpan(1)} ${fmtN(all.tot[1])} · wins ${all.wins[0]}–${all.wins[1]}</div></div>
+    <div class="rows">${rows}</div>
+    <button class="primary" data-act="chNew">+ New chapter</button>`);
+}
+function openChapter(id) {
+  const d = view(), c = findChapter(d, id); if (!c) return;
+  openSheet(`<h2>${esc(c.name)}<button data-act="chapters">Back</button></h2>
+    <label class="field"><span>Name</span><input id="cn-name" value="${esc(c.name)}" maxlength="30"></label>
+    <div class="two">
+      <label class="field"><span>Starting ${PLAYERS[0]}</span><input id="cn-a" value="${c.offset[0]}" inputmode="text"></label>
+      <label class="field"><span>Starting ${PLAYERS[1]}</span><input id="cn-b" value="${c.offset[1]}" inputmode="text"></label>
+    </div>
+    <div class="hint">Starting scores are for importing earlier totals into this chapter without entering every game.</div>
+    <button class="primary" data-act="chSave" data-id="${id}">Save</button>
+    ${c.id !== d.currentChapter ? `<button class="secondary" data-act="chActive" data-id="${id}">Make this the active chapter</button>` : ''}
+    ${!c.games.length && d.chapters.length > 1 ? `<button class="danger" data-act="chDel" data-id="${id}">Delete empty chapter</button>` : ''}`);
+}
+function openNewChapter() {
+  openSheet(`<h2>New chapter<button data-act="chapters">Back</button></h2>
+    <label class="field"><span>Name</span><input id="nc-name" placeholder="e.g. Summer trip" maxlength="30"></label>
+    <div class="hint">New games will be added to this chapter. Earlier chapters keep their own totals.</div>
+    <button class="primary" data-act="chCreate">Create &amp; make active</button>`);
+  setTimeout(() => { const i = $('#nc-name'); if (i) i.focus(); }, 250);
+}
+
+/* settings */
+function openSettings() {
+  const p = S.pending.length;
+  openSheet(`<h2>Settings<button data-act="closeSheet">Close</button></h2>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-weight:700">${isGithub() ? 'GitHub sync' : 'Demo mode'}</div>
+      <div class="subline" style="margin:2px 0 0">${isGithub() ? `${esc(cfg.owner)}/${esc(cfg.repo)} · ${cfg.token ? 'token saved on this phone' : 'no token yet'}` : 'Not connected to a repository. Data stays on this device.'}${p ? ` · ${p} change${p > 1 ? 's' : ''} waiting to sync` : ''}</div>
+    </div>
+    <label class="field"><span>GitHub token</span><input id="st-token" type="password" autocomplete="off" autocapitalize="off" placeholder="${cfg.token ? '•••••••• (saved – paste to replace)' : 'github_pat_…'}"></label>
+    <details><summary>How to create the token</summary><ol>
+      <li>GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
+      <li>Repository access: <b>Only select repositories</b> → choose this repo.</li>
+      <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
+      <li>Set an expiry (up to a year), generate, copy and paste it here.</li></ol></details>
+    <div class="two">
+      <label class="field"><span>Repo owner</span><input id="st-owner" value="${esc(cfg.owner)}" autocapitalize="off" autocorrect="off"></label>
+      <label class="field"><span>Repo name</span><input id="st-repo" value="${esc(cfg.repo)}" autocapitalize="off" autocorrect="off"></label>
+      <label class="field"><span>Branch</span><input id="st-branch" value="${esc(cfg.branch)}" autocapitalize="off"></label>
+      <label class="field"><span>File</span><input id="st-path" value="${esc(cfg.path)}" autocapitalize="off"></label>
+    </div>
+    <div id="st-msg" class="msg"></div>
+    <button class="primary" data-act="stSave">Save &amp; test connection</button>
+    <button class="secondary" data-act="stCopy">Copy all data (JSON backup)</button>
+    ${!isGithub() ? '<button class="danger" data-act="stReset">Reset demo data</button>' : ''}
+    <div class="hint" style="text-align:center;margin-top:14px">Rummy tracker v${VERSION}</div>`);
+}
+async function saveSettings() {
+  const msg = $('#st-msg'); msg.className = 'msg'; msg.textContent = 'Testing…';
+  const t = $('#st-token').value.trim();
+  if (t) { cfg.token = t; LS.set('rummy_token', t); }
+  cfg.owner = $('#st-owner').value.trim(); cfg.repo = $('#st-repo').value.trim();
+  cfg.branch = $('#st-branch').value.trim() || 'main'; cfg.path = $('#st-path').value.trim() || 'scores.json';
+  LS.set('rummy_cfg', { owner: cfg.owner, repo: cfg.repo, branch: cfg.branch, path: cfg.path });
+  if (!isGithub()) { msg.className = 'msg ok'; msg.textContent = 'Saved (demo mode – no repo set).'; return; }
+  try {
+    const r = await ghFetch('GET', `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`);
+    if (r.status === 404) throw new SyncError('err', 'Repository not found – check owner and name');
+    if (!r.ok) await failFrom(r);
+    const j = await r.json();
+    if (cfg.token && j.permissions && j.permissions.push === false) throw new SyncError('auth', 'Token can read but not write – needs Contents: Read and write');
+    if (!cfg.token) { msg.className = 'msg bad'; msg.textContent = 'Repository found, but no token yet – you can read but not save.'; }
+    else { msg.className = 'msg ok'; msg.textContent = 'Connected ✓ – token can write.'; }
+    S.base = null; lastKey = ''; await sync(true);
+  } catch (e) {
+    msg.className = 'msg bad';
+    msg.textContent = e instanceof SyncError ? e.message : 'Could not reach GitHub – check your connection.';
+  }
+}
+
+/* ───────────── events ───────────── */
+const actions = {
+  tab: el => { U.tab = el.dataset.id; render(true); $('#main').scrollTop = 0; },
+  scope: el => { U.scope = el.dataset.id; render(true); },
+  theme: () => {
+    const n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', n); LS.set('rummy_theme', n);
+    const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = n === 'dark' ? '#111214' : '#f5f3ee';
+    render(true);
+  },
+  settings: openSettings, chapters: openChapters, closeSheet,
+  syncnow: () => { if (S.st.msg && S.st.k !== 'syncing') toast(S.st.msg); sync(true); },
+  key: el => { const E = ents[el.dataset.ent]; pressKey(E, el.dataset.k); refreshEntry(el.dataset.ent); },
+  sel: el => { ents[el.dataset.ent].active = +el.dataset.i; refreshEntry(el.dataset.ent); },
+  go: el => {
+    const id = el.dataset.ent, E = ents[id];
+    if (id === 'edit') return saveEdit();
+    if (validVal(E.vals[0]) && validVal(E.vals[1])) submitAdd();
+    else if (validVal(E.vals[E.active])) { E.active = 1 - E.active; refreshEntry(id); }
+  },
+  edit: el => openEdit(el.dataset.id),
+  delGame: () => {
+    if (!confirm('Delete this game?')) return;
+    const id = ents.edit.id; addOp({ op: 'deleteGame', id }); closeSheet(); toast('Game deleted');
+  },
+  toastact: () => { const f = toastFn; $('#toast').hidden = true; if (f) f(); },
+  chOpen: el => openChapter(el.dataset.id),
+  chNew: openNewChapter,
+  chCreate: () => {
+    const name = $('#nc-name').value.trim(); if (!name) return;
+    addOp({ op: 'addChapter', chapter: newChapter(name), activate: true }); closeSheet(); U.scope = null; toast(`Started chapter “${name}”`);
+  },
+  chSave: el => {
+    const name = $('#cn-name').value.trim(); if (!name) return;
+    const n = v => { const x = parseInt(String(v).replace('−', '-'), 10); return Number.isFinite(x) ? x : 0; };
+    addOp({ op: 'editChapter', id: el.dataset.id, name, offset: [n($('#cn-a').value), n($('#cn-b').value)] }); openChapters();
+  },
+  chActive: el => { addOp({ op: 'setActive', id: el.dataset.id }); U.scope = null; closeSheet(); toast('Active chapter changed'); },
+  chDel: el => { if (!confirm('Delete this empty chapter?')) return; addOp({ op: 'deleteChapter', id: el.dataset.id }); openChapters(); },
+  stSave: saveSettings,
+  stCopy: async () => {
+    const msg = $('#st-msg');
+    try { await navigator.clipboard.writeText(serialize(view())); msg.className = 'msg ok'; msg.textContent = 'Copied to clipboard.'; }
+    catch (e) { msg.className = 'msg bad'; msg.textContent = 'Copy not allowed on this device.'; }
+  },
+  stReset: () => {
+    if (!confirm('Reset demo data? This only affects this device.')) return;
+    LS.del('rummy_demo_remote'); LS.del('rummy_cache'); LS.del('rummy_pending'); location.reload();
+  },
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const f = actions[el.dataset.act]; if (f) f(el, e);
+});
+
+/* pull to refresh */
+{
+  const main = $('#main'), p = $('#ptr'); let y = 0, on = false, d = 0;
+  const reset = () => { on = false; d = 0; p.style.height = '0'; p.style.opacity = '0'; };
+  main.addEventListener('touchstart', e => { if (main.scrollTop <= 0) { y = e.touches[0].clientY; on = true; d = 0; } }, { passive: true });
+  main.addEventListener('touchmove', e => {
+    if (!on) return; d = e.touches[0].clientY - y;
+    if (d > 0 && main.scrollTop <= 0) { p.style.height = Math.min(34, d / 2) + 'px'; p.style.opacity = Math.min(1, d / 80); p.textContent = d > 90 ? 'Release to refresh' : 'Pull to refresh'; }
+    else reset();
+  }, { passive: true });
+  main.addEventListener('touchend', () => { if (on && d > 90) sync(true); reset(); });
+}
+
+/* keep fresh */
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(true); sync(false); } });
+window.addEventListener('online', () => sync(true));
+setInterval(() => { if (!document.hidden) sync(S.pending.length > 0); }, (isGithub() && !cfg.token) ? 150000 : 60000);
+
+/* go */
+renderNav(); render(true); sync(true);
+})();
+</script>
+</body>
+</html>
