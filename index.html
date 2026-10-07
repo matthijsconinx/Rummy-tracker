@@ -784,14 +784,7 @@ function openSettings() {
     <button class="primary" data-act="stSave">Save &amp; test connection</button>
     <button class="secondary" data-act="stCopy">Copy all data (JSON backup)</button>
     ${!isGithub() ? '<button class="danger" data-act="stReset">Reset demo data</button>' : ''}
-    <div class="hint" style="text-align:center;margin-top:14px">Rummy tracker v${VERSION}<br>${esc(displayInfo())}</div>`);
-}
-function displayInfo() {
-  const r = s => { const e = $(s); return e ? e.getBoundingClientRect() : { top: 0, bottom: 0 }; };
-  const vv = window.visualViewport, probe = document.createElement('div');
-  probe.style.cssText = 'position:absolute;visibility:hidden;padding-top:env(safe-area-inset-top)';
-  document.body.appendChild(probe); const sat = parseFloat(getComputedStyle(probe).paddingTop) || 0; probe.remove();
-  return `display ${innerWidth}×${innerHeight} · screen ${screen.height} · viewport ${vv ? Math.round(vv.height) + '/' + Math.round(vv.offsetTop) : 'n/a'} · top inset ${Math.round(sat)} · app ${Math.round(r('#app').top)}–${Math.round(r('#app').bottom)} · nav ${Math.round(r('#nav').bottom)}${document.documentElement.classList.contains('standalone') ? ' · standalone' : ''}`;
+    <div class="hint" style="text-align:center;margin-top:14px">Rummy tracker v${VERSION}</div>`);
 }
 async function saveSettings() {
   const msg = $('#st-msg'); msg.className = 'msg'; msg.textContent = 'Testing…';
