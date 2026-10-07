@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rummy">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5f3ee">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Rummy</title>
@@ -31,6 +31,7 @@ if(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalo
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;overflow:hidden}
+html{background:var(--card)}  /* any strip iOS leaves below the app matches the tab bar */
 body{background:var(--bg);color:var(--ink);font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
   overscroll-behavior:none;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation}
@@ -41,9 +42,10 @@ svg{display:block}
 .bga{background:var(--pa)}.bgb{background:var(--pb)}
 .num{font-variant-numeric:tabular-nums}
 
+/* Follow the live window height. iOS home-screen apps can report a window 62px
+   shorter than the screen until the first touch, so never size from the screen. */
 #app{display:flex;flex-direction:column;height:100%}
-@supports (height:100dvh){html:not(.standalone) #app{height:100dvh}}
-html.standalone #app{height:100vh}
+@supports (height:100dvh){#app{height:100dvh}}
 header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 20px) 14px 10px;flex:none}
 .chpill{display:flex;align-items:center;gap:6px;max-width:44%;padding:8px 12px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:650}
 .chpill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
