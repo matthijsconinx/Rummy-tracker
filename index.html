@@ -13,7 +13,8 @@
 <script>
 (function(){var t;try{t=JSON.parse(localStorage.getItem('rummy_theme'))}catch(e){}
 if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
-document.documentElement.setAttribute('data-theme',t);})();
+document.documentElement.setAttribute('data-theme',t);
+if(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches))document.documentElement.classList.add('standalone');})();
 </script>
 <style>
 :root{
@@ -40,7 +41,9 @@ svg{display:block}
 .bga{background:var(--pa)}.bgb{background:var(--pb)}
 .num{font-variant-numeric:tabular-nums}
 
-#app{display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;left:0}
+#app{display:flex;flex-direction:column;height:100%}
+@supports (height:100dvh){html:not(.standalone) #app{height:100dvh}}
+html.standalone #app{height:100vh}
 header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 20px) 14px 10px;flex:none}
 .chpill{display:flex;align-items:center;gap:6px;max-width:44%;padding:8px 12px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:650}
 .chpill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -779,7 +782,14 @@ function openSettings() {
     <button class="primary" data-act="stSave">Save &amp; test connection</button>
     <button class="secondary" data-act="stCopy">Copy all data (JSON backup)</button>
     ${!isGithub() ? '<button class="danger" data-act="stReset">Reset demo data</button>' : ''}
-    <div class="hint" style="text-align:center;margin-top:14px">Rummy tracker v${VERSION}</div>`);
+    <div class="hint" style="text-align:center;margin-top:14px">Rummy tracker v${VERSION}<br>${esc(displayInfo())}</div>`);
+}
+function displayInfo() {
+  const r = s => { const e = $(s); return e ? e.getBoundingClientRect() : { top: 0, bottom: 0 }; };
+  const vv = window.visualViewport, probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;padding-top:env(safe-area-inset-top)';
+  document.body.appendChild(probe); const sat = parseFloat(getComputedStyle(probe).paddingTop) || 0; probe.remove();
+  return `display ${innerWidth}×${innerHeight} · screen ${screen.height} · viewport ${vv ? Math.round(vv.height) + '/' + Math.round(vv.offsetTop) : 'n/a'} · top inset ${Math.round(sat)} · app ${Math.round(r('#app').top)}–${Math.round(r('#app').bottom)} · nav ${Math.round(r('#nav').bottom)}${document.documentElement.classList.contains('standalone') ? ' · standalone' : ''}`;
 }
 async function saveSettings() {
   const msg = $('#st-msg'); msg.className = 'msg'; msg.textContent = 'Testing…';
@@ -870,6 +880,14 @@ document.addEventListener('click', e => {
     else reset();
   }, { passive: true });
   main.addEventListener('touchend', () => { if (on && d > 90) sync(true); reset(); });
+}
+
+/* iOS home-screen apps can launch scrolled/offset; reset whenever the viewport changes */
+{
+  const nudge = () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); };
+  ['load', 'pageshow', 'resize', 'orientationchange'].forEach(e => window.addEventListener(e, nudge));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', nudge);
+  [0, 150, 500, 1200].forEach(ms => setTimeout(nudge, ms));
 }
 
 /* keep fresh */
