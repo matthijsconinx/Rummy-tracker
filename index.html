@@ -41,7 +41,7 @@ svg{display:block}
 .num{font-variant-numeric:tabular-nums}
 
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
-header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;flex:none}
+header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 20px) 14px 10px;flex:none}
 .chpill{display:flex;align-items:center;gap:6px;max-width:44%;padding:8px 12px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:650}
 .chpill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chpill svg{width:14px;height:14px;flex:none;opacity:.6}
@@ -743,12 +743,7 @@ function openChapter(id) {
   const d = view(), c = findChapter(d, id); if (!c) return;
   openSheet(`<h2>${esc(c.name)}<button data-act="chapters">Back</button></h2>
     <label class="field"><span>Name</span><input id="cn-name" value="${esc(c.name)}" maxlength="30"></label>
-    <div class="two">
-      <label class="field"><span>Starting ${PLAYERS[0]}</span><input id="cn-a" value="${c.offset[0]}" inputmode="text"></label>
-      <label class="field"><span>Starting ${PLAYERS[1]}</span><input id="cn-b" value="${c.offset[1]}" inputmode="text"></label>
-    </div>
-    <div class="hint">Starting scores are for importing earlier totals into this chapter without entering every game.</div>
-    <button class="primary" data-act="chSave" data-id="${id}">Save</button>
+    <button class="primary" data-act="chSave" data-id="${id}">Save name</button>
     ${c.id !== d.currentChapter ? `<button class="secondary" data-act="chActive" data-id="${id}">Make this the active chapter</button>` : ''}
     ${!c.games.length && d.chapters.length > 1 ? `<button class="danger" data-act="chDel" data-id="${id}">Delete empty chapter</button>` : ''}`);
 }
@@ -843,8 +838,8 @@ const actions = {
   },
   chSave: el => {
     const name = $('#cn-name').value.trim(); if (!name) return;
-    const n = v => { const x = parseInt(String(v).replace('−', '-'), 10); return Number.isFinite(x) ? x : 0; };
-    addOp({ op: 'editChapter', id: el.dataset.id, name, offset: [n($('#cn-a').value), n($('#cn-b').value)] }); openChapters();
+    const c = findChapter(view(), el.dataset.id);
+    addOp({ op: 'editChapter', id: el.dataset.id, name, offset: c ? c.offset : [0, 0] }); openChapters();
   },
   chActive: el => { addOp({ op: 'setActive', id: el.dataset.id }); U.scope = null; closeSheet(); toast('Active chapter changed'); },
   chDel: el => { if (!confirm('Delete this empty chapter?')) return; addOp({ op: 'deleteChapter', id: el.dataset.id }); openChapters(); },
